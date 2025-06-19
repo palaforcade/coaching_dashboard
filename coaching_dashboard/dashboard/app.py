@@ -1,48 +1,49 @@
 import streamlit as st
+import polars as pl
+import os
+from dotenv import load_dotenv
+
+
+load_dotenv()
+
+DATA_FOLDER_PATH = os.getenv("DATA_FOLDER_PATH")
 
 # Set page config
-st.set_page_config(page_title="Hello World App", page_icon="👋", layout="wide")
+st.set_page_config(page_title="Coaching Dashboard", page_icon="👋", layout="wide")
 
 # Main title
-st.title("👋 Hello World!")
+st.title("Coaching Dashboard")
 st.markdown("---")
 
-# Welcome message
-st.header("Welcome to my Streamlit App")
-st.write("This is a simple Hello World application built with Streamlit.")
-
-# Interactive elements
-st.subheader("Let's interact!")
-
-# Text input
-user_name = st.text_input("What's your name?", "World")
-st.write(f"Hello, {user_name}! 👋")
-
-# Slider
-age = st.slider("How old are you?", 0, 100, 25)
-st.write(f"You are {age} years old!")
-
-# Selectbox
-favorite_color = st.selectbox(
-    "What's your favorite color?",
-    ["Red", "Blue", "Green", "Yellow", "Purple", "Orange"],
-)
-st.write(f"Your favorite color is {favorite_color}!")
-
-# Button
-if st.button("Click me!"):
-    st.balloons()
-    st.success("🎉 You clicked the button! 🎉")
-
-# Sidebar
-st.sidebar.header("About")
-st.sidebar.info(
-    """
-This is a simple Hello World Streamlit app.
-It demonstrates basic Streamlit components and interactions.
-"""
+# Add athlete ID input
+athlete_id = st.text_input(
+    "Enter Athlete ID",
+    value="palaforcade",
+    help="Enter the ID of the athlete whose data you want to view",
 )
 
-# Footer
-st.markdown("---")
-st.markdown("*Built with ❤️ using Streamlit*")
+# Load the parquet file
+df = pl.read_parquet(
+    os.path.join(DATA_FOLDER_PATH, athlete_id, "processed", "fit_file_test.parquet")
+)
+
+
+# Calculate speed from distance
+
+# Speed = change in distance / change in time
+speed_df = df.with_columns(
+    [
+        pl.col("Distance_m").diff().alias("distance_change"),
+        pl.col("Timestamp").diff().dt.total_seconds().alias("time_change"),
+    ]
+).with_columns([(pl.col("distance_change") / pl.col("time_change")).alias("Speed_mps")])
+
+# Create speed over time plot
+st.line_chart(
+    speed_df,
+    x="Timestamp",
+    y="Speed_mps",
+)
+
+# Display as table
+st.dataframe(df)
