@@ -1,0 +1,3 @@
+DATA_RAW_FOLDER = "raw"
+DATA_PROCESSED_FOLDER = "processed"
+DATA_CACHE_FOLDER = "cache"
